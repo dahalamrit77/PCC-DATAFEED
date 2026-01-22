@@ -1,0 +1,14 @@
+/* Minimal global reset - MUI handles most styling via ThemeProvider */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
