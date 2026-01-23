@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { SnackbarProvider } from 'notistack';
-import { useTheme } from '@mui/material/styles';
 
 interface ToastProviderProps {
   children: React.ReactNode;

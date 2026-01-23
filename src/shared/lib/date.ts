@@ -50,6 +50,19 @@ export const getRelativeTime = (date: string | Date): string => {
 };
 
 /**
+ * Format event time for display (removes "about" prefix for cleaner display)
+ */
+export const formatEventTime = (timestamp: string): string => {
+  try {
+    const distance = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    // Convert "about X hours ago" to "X hours ago" for cleaner display
+    return distance.replace('about ', '');
+  } catch {
+    return 'Unknown';
+  }
+};
+
+/**
  * Calculate age from birth date
  */
 export const calculateAge = (birthDate: string | Date): number => {

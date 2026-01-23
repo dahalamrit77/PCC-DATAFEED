@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const FEATURES = [
@@ -18,7 +19,7 @@ export const LoginHero: React.FC = () => {
         position: 'relative',
         overflow: 'hidden',
         background: 'linear-gradient(145deg, #0a85d1 0%, #0b9df5 60%, #0ec1ff 100%)',
-        color: '#ffffff',
+        color: 'common.white',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -41,12 +42,12 @@ export const LoginHero: React.FC = () => {
                 width: 48,
                 height: 48,
                 borderRadius: '12px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: (theme) => alpha(theme.palette.common.white, 0.2),
                 display: 'grid',
                 placeItems: 'center',
                 fontWeight: 700,
-                color: 'white',
-                fontSize: 14,
+                color: 'common.white',
+                fontSize: '0.875rem',
               }}
             >
               LOGO
@@ -72,7 +73,7 @@ export const LoginHero: React.FC = () => {
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
                 fontWeight: 700,
-                color: '#ffffff',
+                color: 'common.white',
                 mb: 0.5,
               }}
             >
@@ -81,11 +82,11 @@ export const LoginHero: React.FC = () => {
             <Typography
               variant="body1"
               sx={{
-                color: 'rgba(255,255,255,0.95)',
+                color: (theme) => alpha(theme.palette.common.white, 0.95),
                 fontWeight: 500,
               }}
             >
-              CensusIQ
+              CareSyncPro
             </Typography>
           </Box>
         </Stack>
@@ -97,7 +98,7 @@ export const LoginHero: React.FC = () => {
           sx={{
             fontSize: { xs: 32, sm: 40, md: 44 },
             fontWeight: 800,
-            color: '#ffffff',
+            color: 'common.white',
             lineHeight: 1.2,
             letterSpacing: '-0.02em',
           }}
@@ -107,7 +108,7 @@ export const LoginHero: React.FC = () => {
         <Typography
           variant="body1"
           sx={{
-            color: 'rgba(255,255,255,0.95)',
+            color: (theme) => alpha(theme.palette.common.white, 0.95),
             mb: 5,
             fontSize: '1.1rem',
             lineHeight: 1.6,
@@ -123,7 +124,7 @@ export const LoginHero: React.FC = () => {
               <CheckCircleIcon
                 sx={{
                   color: 'success.light',
-                  fontSize: 28,
+                  fontSize: '1.75rem',
                   mt: 0.25,
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
                 }}
@@ -131,7 +132,7 @@ export const LoginHero: React.FC = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  color: '#ffffff',
+                  color: 'common.white',
                   fontSize: '1.05rem',
                   fontWeight: 500,
                   lineHeight: 1.5,

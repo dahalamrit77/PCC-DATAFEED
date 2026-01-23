@@ -11,6 +11,10 @@ export default defineConfig({
       '@features': path.resolve(__dirname, './src/features'),
       '@shared': path.resolve(__dirname, './src/shared'),
       '@entities': path.resolve(__dirname, './src/entities'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@contexts': path.resolve(__dirname, './src/contexts'),
+      '@theme': path.resolve(__dirname, './src/theme'),
     },
   },
   server: {

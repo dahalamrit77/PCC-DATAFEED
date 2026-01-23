@@ -1,3 +1,5 @@
 // Temporarily export the existing DashboardPage
-// This will be fully migrated in Phase 2
+// This keeps the router import stable while the dashboard
+// feature is gradually migrated into the feature folder.
 export { DashboardPage } from '../../../pages/dashboard/DashboardPage';
+

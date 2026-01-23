@@ -3,9 +3,9 @@
  * RTK Query endpoints for patient data
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type { Patient } from '../../../types/patient.types';
-import type { ApiResponse } from '../../../shared/types';
+import type { ApiResponse } from '@shared/types';
 
 export interface GetPatientsParams {
   patientId?: string;
@@ -15,10 +15,15 @@ export interface GetPatientsParams {
 export const patientsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPatients: builder.query<Patient[], GetPatientsParams | void>({
-      query: (params) => ({
-        url: '/patients',
-        params,
-      }),
+      query: (params) => {
+        if (!params) {
+          return { url: '/patients' };
+        }
+        return {
+          url: '/patients',
+          params: params as Record<string, unknown>,
+        };
+      },
       transformResponse: (response: ApiResponse<Patient[]>) => {
         if (response?.data && Array.isArray(response.data)) {
           return response.data;
@@ -38,7 +43,7 @@ export const patientsApi = baseApi.injectEndpoints({
         }
         throw new Error('Patient not found');
       },
-      providesTags: (result, error, id) => [{ type: 'Patient', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Patient', id }],
     }),
   }),
 });

@@ -20,12 +20,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useCreateUserMutation } from '../api/usersApi';
-import { useGetFacilitiesQuery } from '../../../entities/facility/api/facilityApi';
-import { usePermissions } from '../../../shared/hooks/usePermissions';
-import { useToast } from '../../../shared/hooks/useToast';
-import { UserRole, type CreateUserRequest } from '../../../shared/types/user.types';
-import { useAppSelector } from '../../../app/store/hooks';
-import { getRoleDisplayName } from '../../../shared/lib/permissions';
+import { useGetFacilitiesQuery } from '@entities/facility/api/facilityApi';
+import { usePermissions } from '@shared/hooks/usePermissions';
+import { useToast } from '@shared/hooks/useToast';
+import { UserRole, type CreateUserRequest } from '@shared/types/user.types';
+import { useAppSelector } from '@app/store/hooks';
+import { getRoleDisplayName } from '@shared/lib/permissions';
 
 interface CreateUserFormValues {
   email: string;
@@ -242,7 +242,7 @@ export const CreateUserForm: React.FC = () => {
           ? (err as { message?: string }).message
           : 'Failed to create user. Please try again.';
       
-      showError(errorMessage);
+      showError(errorMessage || 'Failed to create user. Please try again.');
     }
   };
 
@@ -431,7 +431,12 @@ export const CreateUserForm: React.FC = () => {
               <FormControl fullWidth required error={Boolean(errors.role)}>
                 <Select
                   value={formValues.role}
-                  onChange={(e) => handleChange('role')({ target: { value: e.target.value } })}
+                  onChange={(e) => {
+                    const syntheticEvent = {
+                      target: { value: e.target.value, name: 'role' },
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    handleChange('role')(syntheticEvent);
+                  }}
                   displayEmpty
                   size="small"
                 >
@@ -526,9 +531,8 @@ export const CreateUserForm: React.FC = () => {
               <Button
                 type="submit"
                 variant="contained"
-                size="large"
+                size="medium"
                 disabled={isSubmitting}
-                sx={{ minWidth: 180 }}
               >
                 {isSubmitting ? (
                   <>

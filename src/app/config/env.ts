@@ -3,6 +3,8 @@
  * Type-safe access to environment variables with validation
  */
 
+import { logger } from '@shared/lib/logger';
+
 interface AppConfig {
   apiBaseUrl: string;
   appName: string;
@@ -33,7 +35,7 @@ export const config: AppConfig = {
 
 // Validate critical config at startup
 if (config.isDevelopment) {
-  console.log('[Config] Environment configuration:', {
+  logger.info('Environment configuration', {
     apiBaseUrl: config.apiBaseUrl,
     environment: config.environment,
   });

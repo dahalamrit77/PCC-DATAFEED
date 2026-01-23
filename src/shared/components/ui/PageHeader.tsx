@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Box, Breadcrumbs, Link, Stack, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 interface BreadcrumbItem {

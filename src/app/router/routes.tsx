@@ -8,9 +8,9 @@ import { lazy, Suspense } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleProtectedRoute } from './RoleProtectedRoute';
-import { DashboardWrapper } from '../../shared/components/layout/DashboardWrapper';
-import { ROUTES } from '../../shared/constants/routes';
-import { UserRole } from '../../shared/types/user.types';
+import { DashboardWrapper } from '@shared/components/layout/DashboardWrapper';
+import { ROUTES } from '@shared/constants/routes';
+import { UserRole } from '@shared/types/user.types';
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() =>
@@ -58,6 +58,9 @@ const EditUserPage = lazy(() =>
 // Loading fallback component
 const LoadingFallback = () => (
   <Box
+    role="status"
+    aria-live="polite"
+    aria-label="Loading"
     sx={{
       display: 'flex',
       justifyContent: 'center',
@@ -65,7 +68,7 @@ const LoadingFallback = () => (
       minHeight: '100vh',
     }}
   >
-    <CircularProgress />
+    <CircularProgress aria-hidden />
   </Box>
 );
 

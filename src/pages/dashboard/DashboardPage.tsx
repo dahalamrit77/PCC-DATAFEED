@@ -27,19 +27,17 @@ import {
   Visibility as VisibilityIcon,
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
-import { formatDistanceToNow } from 'date-fns';
+import { formatEventTime } from '@shared/lib/date';
 import type { PatientEvent, Patient } from '../../types/patient.types';
-import { InsuranceCellOptimized } from '../../components/dashboard/InsuranceCellOptimized';
-import { useDashboard } from '../../contexts/DashboardContext';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setActiveFacility } from '../../store/slices/facilitySlice';
-import { useGetFacilitiesQuery } from '../../entities/facility/api/facilityApi';
-import { ROUTES } from '../../shared/constants/routes';
-import { useGetPatientsQuery } from '../../features/patients/api/patientsApi';
-import { useGetEventsQuery } from '../../features/patients/api/eventsApi';
-import { useGetMultiplePatientCoverageQuery } from '../../features/patients/api/coverageApi';
-import { usePermissions } from '../../shared/hooks/usePermissions';
-import { PageHeader, SectionCard, DataTableContainer, LiveUpdates } from '../../shared/components/ui';
+import { InsuranceCellOptimized } from '@components/dashboard/InsuranceCellOptimized';
+import { useDashboard } from '@contexts/DashboardContext';
+import { useAppSelector } from '@app/store/hooks';
+import { ROUTES } from '@shared/constants/routes';
+import { useGetPatientsQuery } from '@features/patients/api/patientsApi';
+import { useGetEventsQuery } from '@features/patients/api/eventsApi';
+import { useGetMultiplePatientCoverageQuery } from '@features/patients/api/coverageApi';
+import { usePermissions } from '@shared/hooks/usePermissions';
+import { SectionCard, DataTableContainer, LiveUpdates } from '@shared/components/ui';
 
 interface TableRowData {
   patient: Patient;
@@ -85,37 +83,16 @@ const getEventTypeLabel = (eventType: string) => {
   }
 };
 
-const formatEventTime = (timestamp: string): string => {
-  try {
-    const date = new Date(timestamp);
-    const distance = formatDistanceToNow(date, { addSuffix: true });
-    // Convert "about X hours ago" to "X hours ago" for cleaner display
-    return distance.replace('about ', '');
-  } catch (error) {
-    return 'Unknown';
-  }
-};
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { searchTerm } = useDashboard();
-  const dispatch = useAppDispatch();
-  const { canExportData, canManagePatients } = usePermissions();
+  const { canExportData } = usePermissions();
   
   // Redux: Get auth and facility state (RBAC)
-  const { user } = useAppSelector((state) => state.auth);
-  const { selectedFacilityId, facilityIds } = useAppSelector(
+  const { selectedFacilityId } = useAppSelector(
     (state) => state.facility
   );
-  
-  // Fetch facilities using RTK Query
-  const { data: facilities = [] } = useGetFacilitiesQuery();
-  
-  // Check if user is admin (has multiple facilities)
-  // Prefer Redux facilityIds / facilities, but also treat test@example.com as admin explicitly
-  const isEmailAdmin = user.email === 'test@example.com';
-  const isFacilityAdmin = facilityIds.length > 1 || facilities.length > 1;
-  const isAdmin = isEmailAdmin || isFacilityAdmin;
   
   // Fetch patients via RTK Query
   const {
@@ -142,11 +119,17 @@ export const DashboardPage: React.FC = () => {
 
   /**
    * Latest event per patient (by timestamp) for fast lookup.
+   * Filters out events with invalid patientId (0 or undefined).
    */
   const latestEventByPatientId = useMemo(() => {
     const map = new Map<number, PatientEvent>();
 
     events.forEach((event) => {
+      // Skip events with invalid patientId
+      if (!event.patientId || event.patientId === 0) {
+        return;
+      }
+
       const existing = map.get(event.patientId);
       if (!existing) {
         map.set(event.patientId, event);
@@ -236,26 +219,52 @@ export const DashboardPage: React.FC = () => {
   // Calculate KPI metrics
   const metrics = useMemo(() => {
     const totalCensus = patients.filter((p) => p.patientStatus !== 'Discharged').length;
+    // Count InsuranceUpdate events from the events API
+    const insuranceChanges = events.filter(
+      (e) => e.eventType === 'InsuranceUpdate'
+    ).length;
     return {
       totalCensus,
-      insuranceChanges: 27, // Hardcoded as per requirements
+      insuranceChanges,
     };
-  }, [patients]);
+  }, [patients, events]);
 
-  // Create table rows using patients as primary source, enriched with most recent event.
-  // IMPORTANT: The dashboard only shows patients that have at least one event.
+  // Create table rows using events as primary source, enriched with patient data.
+  // This ensures events are shown even if patient matching fails.
   const tableRows = useMemo((): TableRowData[] => {
-    return patients
-      .map((patient) => {
-        const event = latestEventByPatientId.get(patient.patientId) ?? null;
-        return { patient, event };
-      })
-      .filter((row) => {
+    // Create a map of patients by patientId for fast lookup
+    const patientsMap = new Map<number, Patient>();
+    patients.forEach((patient) => {
+      patientsMap.set(patient.patientId, patient);
+    });
+
+    // Start with events and match to patients
+    const rows: TableRowData[] = [];
+    latestEventByPatientId.forEach((event, patientId) => {
+      const patient = patientsMap.get(patientId);
+      // Include event even if patient not found (will show with limited patient data)
+      rows.push({ 
+        patient: patient || {
+          patientId,
+          firstName: event.patientName?.split(', ')[1] || event.patientName || 'Unknown',
+          lastName: event.patientName?.split(', ')[0] || 'Patient',
+          birthDate: '',
+          gender: '',
+          patientStatus: 'Current' as const,
+        },
+        event 
+      });
+    });
+
+    return rows.filter((row) => {
         if (!row.event) {
           return false;
         }
 
-        if (statusFilter !== 'all') {
+        // Only apply status filter if we have a real patient match
+        // Events without matching patients use 'Current' status, so they'll pass 'active' filter
+        const hasRealPatient = patientsMap.has(row.patient.patientId);
+        if (hasRealPatient && statusFilter !== 'all') {
           if (
             statusFilter === 'active' &&
             row.patient.patientStatus !== 'Current'
@@ -286,20 +295,36 @@ export const DashboardPage: React.FC = () => {
           }
         }
 
-        if (row.event) {
-          const eventDate = new Date(row.event.timestamp);
-          const hoursAgo =
-            (Date.now() - eventDate.getTime()) / (1000 * 60 * 60);
-          const daysAgo = hoursAgo / 24;
+        if (row.event && row.event.timestamp) {
+          try {
+            const eventDate = new Date(row.event.timestamp);
+            // Skip if date is invalid
+            if (isNaN(eventDate.getTime())) {
+              // If date is invalid and filter is not 'all', exclude it
+              // Otherwise include it (for 'all' filter)
+              if (dateRangeFilter !== 'all') {
+                return false;
+              }
+            } else {
+              const hoursAgo =
+                (Date.now() - eventDate.getTime()) / (1000 * 60 * 60);
+              const daysAgo = hoursAgo / 24;
 
-          if (dateRangeFilter === '24h' && hoursAgo > 24) {
-            return false;
-          }
-          if (dateRangeFilter === '7d' && daysAgo > 7) {
-            return false;
-          }
-          if (dateRangeFilter === '30d' && daysAgo > 30) {
-            return false;
+              if (dateRangeFilter === '24h' && hoursAgo > 24) {
+                return false;
+              }
+              if (dateRangeFilter === '7d' && daysAgo > 7) {
+                return false;
+              }
+              if (dateRangeFilter === '30d' && daysAgo > 30) {
+                return false;
+              }
+            }
+          } catch (error) {
+            // If date parsing fails and filter is not 'all', exclude it
+            if (dateRangeFilter !== 'all') {
+              return false;
+            }
           }
         }
 
@@ -409,8 +434,6 @@ export const DashboardPage: React.FC = () => {
         <MetricCard
           title="TOTAL CENSUS"
           value={metrics.totalCensus}
-          change="↑ 2.4% from last week"
-          changeColor="success"
           icon={<PeopleIcon />}
           iconColor="#7b2cbf"
           loading={isLoading}
@@ -418,8 +441,6 @@ export const DashboardPage: React.FC = () => {
         <MetricCard
           title="INSURANCE CHANGES"
           value={metrics.insuranceChanges}
-          change="↑ 8 new today"
-          changeColor="success"
           icon={<CreditCardIcon />}
           iconColor="#0288d1"
           loading={isLoading}
@@ -547,6 +568,7 @@ export const DashboardPage: React.FC = () => {
                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                     <IconButton
                       size="small"
+                      aria-label="View patient details"
                       onClick={(e) => { e.stopPropagation(); handleRowClick(row.patient.patientId); }}
                       sx={{
                         '&:hover': { backgroundColor: 'action.hover' },
@@ -557,6 +579,7 @@ export const DashboardPage: React.FC = () => {
                     </IconButton>
                     <IconButton
                       size="small"
+                      aria-label="More actions"
                       onClick={(e) => e.stopPropagation()}
                       sx={{
                         '&:hover': { backgroundColor: 'action.hover' },
@@ -582,8 +605,6 @@ export const DashboardPage: React.FC = () => {
 interface MetricCardProps {
   title: string;
   value: number;
-  change: string;
-  changeColor: 'success' | 'error' | 'warning' | 'info';
   icon: React.ReactNode;
   iconColor: string;
   loading: boolean;
@@ -592,8 +613,6 @@ interface MetricCardProps {
 const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
-  change,
-  changeColor,
   icon,
   iconColor,
   loading,
@@ -619,15 +638,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
         variant="h3"
         sx={{
           fontWeight: 700,
-          mb: 1,
           fontSize: { xs: '2rem', sm: '2.5rem' },
           lineHeight: 1.2,
         }}
       >
         {loading ? '—' : value.toLocaleString()}
-      </Typography>
-      <Typography variant="caption" color={`${changeColor}.main`} sx={{ fontWeight: 600 }}>
-        {change}
       </Typography>
     </CardContent>
   </Card>

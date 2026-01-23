@@ -3,7 +3,7 @@
  * RTK Query endpoints for facility data
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type { Facility } from '../types/facility.types';
 
 interface FacilitiesResponse {

@@ -6,14 +6,9 @@
 import React from 'react';
 import {
   Box,
-  CircularProgress,
   Paper,
   Table,
-  TableBody,
-  TableCell,
   TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from '@mui/material';
 import { TableSkeleton } from './TableSkeleton';
@@ -48,9 +43,14 @@ export const DataTableContainer: React.FC<DataTableContainerProps> = ({
   }
 
   return (
-    <TableContainer component={Paper} sx={{ ...sx }} elevation={0}>
+    <TableContainer
+      component={Paper}
+      sx={{ ...sx }}
+      elevation={0}
+      aria-busy={loading}
+    >
       {loading ? (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3 }} role="status" aria-label="Loading table">
           <TableSkeleton rows={8} columns={6} />
         </Box>
       ) : empty ? (

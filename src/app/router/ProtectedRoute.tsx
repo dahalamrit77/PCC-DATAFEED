@@ -7,10 +7,10 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { storage } from '../../shared/lib/storage';
-import { ROUTES } from '../../shared/constants/routes';
-import { isTokenValid } from '../../shared/lib/jwt';
-import { logout } from '../../features/auth/store/authSlice';
+import { storage } from '@shared/lib/storage';
+import { ROUTES } from '@shared/constants/routes';
+import { isTokenValid } from '@shared/lib/jwt';
+import { logout } from '@features/auth/store/authSlice';
 
 /**
  * Route guard for authenticated routes.
@@ -18,7 +18,8 @@ import { logout } from '../../features/auth/store/authSlice';
  */
 export const ProtectedRoute: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
+  const isAuthenticated = user.isAuthenticated;
 
   const token = storage.getToken();
   const tokenValid = isTokenValid(token);

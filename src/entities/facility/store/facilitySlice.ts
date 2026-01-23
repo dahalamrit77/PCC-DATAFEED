@@ -6,7 +6,7 @@
 
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { storage } from '../../../shared/lib/storage';
+import { storage } from '@shared/lib/storage';
 
 interface FacilityState {
   facilityIds: number[]; // Array of facIds for RBAC (populated from RTK Query)

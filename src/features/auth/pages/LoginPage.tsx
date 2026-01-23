@@ -2,11 +2,13 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { LoginForm, LoginHero } from '../components';
 import type { LoginFormValues } from '../components';
+import { logger } from '@shared/lib/logger';
 
 export const LoginPage: React.FC = () => {
   const handleLogin = (values: LoginFormValues) => {
-    // TODO: Replace with real auth service call when backend is ready.
-    console.info('Login attempted with placeholder handler', values);
+    // Note: LoginForm handles login internally via RTK Query
+    // This handler is optional and called after successful login
+    logger.debug('Login successful callback', { email: values.email });
   };
 
   return (

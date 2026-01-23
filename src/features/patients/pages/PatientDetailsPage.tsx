@@ -19,8 +19,8 @@ import {
   TableRow,
 } from '@mui/material';
 import { usePatientDetails } from '../hooks/usePatientDetails';
-import { CardSkeleton, PageHeader, SectionCard, DataTableContainer, EmptyState } from '../../../shared/components/ui';
-import { ROUTES } from '../../../shared/constants/routes';
+import { CardSkeleton, SectionCard, DataTableContainer, EmptyState } from '@shared/components/ui';
+import { ROUTES } from '@shared/constants/routes';
 import type { AdtRecord, PatientEvent } from '../../../types/patient.types';
 
 interface TabPanelProps {
@@ -48,6 +48,76 @@ const tabA11yProps = (index: number) => ({
   id: `patient-details-tab-${index}`,
   'aria-controls': `patient-details-tabpanel-${index}`,
 });
+
+const getEventTypeLabel = (eventType: string): string => {
+  switch (eventType) {
+    case 'RoomChange':
+      return 'Room Change';
+    case 'InsuranceUpdate':
+      return 'Insurance Update';
+    case 'Death':
+      return 'Death';
+    case 'HospitalTransfer':
+      return 'Hospital Transfer';
+    case 'HOAStatus':
+      return 'HOA Status';
+    case 'Admission':
+    case 'Discharge':
+    case 'Transfer':
+      return eventType;
+    default:
+      return eventType.replace(/([a-z])([A-Z])/g, '$1 $2') || eventType;
+  }
+};
+
+const getEventTypeChipColor = (
+  eventType: string
+): 'success' | 'error' | 'warning' | 'info' | 'default' => {
+  switch (eventType) {
+    case 'Admission':
+    case 'RoomChange':
+      return 'success';
+    case 'Discharge':
+    case 'Death':
+      return 'error';
+    case 'Transfer':
+    case 'HospitalTransfer':
+    case 'HOAStatus':
+      return 'warning';
+    case 'InsuranceUpdate':
+      return 'info';
+    default:
+      return 'default';
+  }
+};
+
+/**
+ * Format event-specific details for the Event Details column.
+ */
+const formatEventDetails = (event: PatientEvent): string => {
+  switch (event.eventType) {
+    case 'RoomChange': {
+      const prev = event.previousRoom || 'Unknown';
+      const curr = event.room || 'Unknown';
+      return `Room ${prev} → ${curr}`;
+    }
+    case 'InsuranceUpdate': {
+      const prev = event.previousProvider || 'Unknown';
+      const curr = event.currentProvider || 'Unknown';
+      return `${prev} → ${curr}`;
+    }
+    case 'Death': {
+      const parts: string[] = [];
+      if (event.previousRoom) parts.push(`Previously in Room ${event.previousRoom}`);
+      if (event.destination && event.destination !== '-')
+        parts.push(event.destination);
+      if (parts.length === 0) return 'Deceased';
+      return parts.join('. ');
+    }
+    default:
+      return [event.origin, event.destination].filter(Boolean).join(' → ') || '—';
+  }
+};
 
 export const PatientDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -408,48 +478,53 @@ export const PatientDetailsPage: React.FC = () => {
         {/* RECENT EVENTS TAB */}
         <TabPanel value={activeTab} index={3}>
           <SectionCard title="Recent Events">
-            {patient.recentEvents && patient.recentEvents.length > 0 ? (
-              <DataTableContainer
-                empty={false}
-                emptyMessage="No recent events recorded for this patient."
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date / Time</TableCell>
-                    <TableCell>Event Type</TableCell>
-                    <TableCell>Patient Name</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {patient.recentEvents.map((event: PatientEvent) => (
-                    <TableRow key={event.eventId} hover>
-                      <TableCell>
-                        {new Date(event.timestamp).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={event.eventType}
-                          size="small"
-                          color={
-                            event.eventType === 'Admission'
-                              ? 'success'
-                              : event.eventType === 'Discharge'
-                              ? 'error'
-                              : event.eventType === 'Transfer'
-                              ? 'warning'
-                              : 'default'
-                          }
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>{event.patientName}</TableCell>
+            {(() => {
+              const allEvents = patient.recentEvents ?? [];
+              const patientEvents = allEvents.filter(
+                (e) => Number(e.patientId) === Number(patient.patientId)
+              );
+              if (patientEvents.length === 0) {
+                return (
+                  <EmptyState message="No recent events recorded for this patient." />
+                );
+              }
+              return (
+                <DataTableContainer
+                  empty={false}
+                  emptyMessage="No recent events recorded for this patient."
+                >
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date / Time</TableCell>
+                      <TableCell>Event Type</TableCell>
+                      <TableCell>Event Details</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </DataTableContainer>
-            ) : (
-              <EmptyState message="No recent events recorded for this patient." />
-            )}
+                  </TableHead>
+                  <TableBody>
+                    {patientEvents.map((event: PatientEvent) => (
+                      <TableRow key={event.eventId} hover>
+                        <TableCell>
+                          {new Date(event.timestamp).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={getEventTypeLabel(event.eventType)}
+                            size="small"
+                            color={getEventTypeChipColor(event.eventType)}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {formatEventDetails(event)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </DataTableContainer>
+              );
+            })()}
           </SectionCard>
         </TabPanel>
       </Box>

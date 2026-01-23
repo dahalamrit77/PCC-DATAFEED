@@ -7,8 +7,8 @@ import { useGetPatientByIdQuery } from '../api/patientsApi';
 import { useGetPatientCoverageQuery } from '../api/coverageApi';
 import { useGetPatientAdtRecordsQuery } from '../api/adtApi';
 import { useGetPatientEventsQuery } from '../api/eventsApi';
-import { enrichPatientData } from '../../../services/patient.adapter';
-import type { PatientDetail, PatientEvent } from '../../../types/patient.types';
+import { enrichPatientData } from '@shared/lib/patient.adapter';
+import type { PatientDetail } from '../../../types/patient.types';
 
 export const usePatientDetails = (patientId: string) => {
   const numericId = parseInt(patientId, 10);

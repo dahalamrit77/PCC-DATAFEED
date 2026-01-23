@@ -3,9 +3,9 @@
  * RTK Query endpoints for ADT (Admission, Discharge, Transfer) records
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type { AdtRecord } from '../../../types/patient.types';
-import type { ApiResponse } from '../../../shared/types';
+import type { ApiResponse } from '@shared/types';
 
 export const adtApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -27,7 +27,7 @@ export const adtApi = baseApi.injectEndpoints({
         }
         return [];
       },
-      providesTags: (result, error, patientId) => [
+      providesTags: (_result, _error, patientId) => [
         { type: 'Adt', id: patientId },
       ],
     }),

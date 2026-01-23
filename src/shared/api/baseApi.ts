@@ -9,6 +9,7 @@ import { baseQueryWithAuth } from './interceptors';
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithAuth,
+  keepUnusedDataFor: 60,
   tagTypes: [
     'Patient',
     'PatientDetail',

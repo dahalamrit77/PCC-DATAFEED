@@ -12,7 +12,6 @@ import {
   Drawer,
   FormControl,
   IconButton,
-  InputAdornment,
   List,
   ListItem,
   ListItemButton,
@@ -20,7 +19,6 @@ import {
   ListItemText,
   MenuItem,
   Select,
-  TextField,
   Toolbar,
   Typography,
 } from '@mui/material';
@@ -28,15 +26,14 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../../app/store/hooks';
-import { setFacilityIds, clearSelectedFacility, setActiveFacility } from '../../../entities/facility/store/facilitySlice';
-import { logout, setUser } from '../../../features/auth/store/authSlice';
-import { useGetFacilitiesQuery } from '../../../entities/facility/api/facilityApi';
-import { usePermissions } from '../../hooks/usePermissions';
-import { UserRole } from '../../types/user.types';
-import { ROUTES } from '../../constants/routes';
+import { useAppDispatch, useAppSelector } from '@app/store/hooks';
+import { setFacilityIds, clearSelectedFacility, setActiveFacility } from '@entities/facility/store/facilitySlice';
+import { logout, setUser } from '@features/auth/store/authSlice';
+import { useGetFacilitiesQuery } from '@entities/facility/api/facilityApi';
+import { usePermissions } from '@shared/hooks/usePermissions';
+import { UserRole } from '@shared/types/user.types';
+import { ROUTES } from '@shared/constants/routes';
 import { UserMenu } from './UserMenu';
 
 const drawerWidth = 260;
@@ -44,15 +41,9 @@ const APP_BAR_HEIGHT = { xs: 64, sm: 72 } as const;
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  searchTerm?: string;
-  onSearchChange?: (value: string) => void;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  children, 
-  searchTerm = '', 
-  onSearchChange 
-}) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,7 +54,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Fetch facilities using RTK Query
   const { data: facilities = [] } = useGetFacilitiesQuery();
   const { user } = useAppSelector((state) => state.auth);
-  const { selectedFacilityId, facilityIds } = useAppSelector((state) => state.facility);
+  const { selectedFacilityId } = useAppSelector((state) => state.facility);
   const { canCreateUsers } = usePermissions();
   
   // Check if user is Super Admin (only Super Admin should see facility dropdown)
@@ -170,8 +161,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             lineHeight: 1.3,
             mb: 0.5,
           }}
-        >
-          Census Dashboard
+        >CareSync Pro
         </Typography>
         <Typography
           variant="caption"
@@ -334,27 +324,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 ))}
               </Select>
             </FormControl>
-          )}
-          
-          {/* Search Bar */}
-          {onSearchChange && (
-            <TextField
-              placeholder="Search residents, facilities, or events..."
-              size="small"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                maxWidth: 400, 
-                width: { xs: 200, sm: 300, md: 400 },
-              }}
-            />
           )}
           
           <UserMenu onLogout={handleLogout} />

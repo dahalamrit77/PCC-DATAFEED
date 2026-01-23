@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Card, CardContent, Skeleton, Box, Stack } from '@mui/material';
+import { Card, CardContent, Skeleton, Stack } from '@mui/material';
 
 export const MetricCardSkeleton: React.FC = () => {
   return (
@@ -13,7 +13,7 @@ export const MetricCardSkeleton: React.FC = () => {
         flex: 1,
         borderTop: '4px solid',
         borderColor: 'divider',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: 2,
         borderRadius: 1,
       }}
     >

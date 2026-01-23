@@ -29,12 +29,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, DataTableContainer } from '../../../shared/components/ui';
-import { ROUTES } from '../../../shared/constants/routes';
-import { UserRole, type User } from '../../../shared/types/user.types';
-import { getRoleDisplayName } from '../../../shared/lib/permissions';
+import { PageHeader, DataTableContainer } from '@shared/components/ui';
+import { ROUTES } from '@shared/constants/routes';
+import { UserRole, type User } from '@shared/types/user.types';
+import { getRoleDisplayName } from '@shared/lib/permissions';
 import { useGetUsersQuery, useDeleteUserMutation } from '../api/usersApi';
-import { useToast } from '../../../shared/hooks/useToast';
+import { useToast } from '@shared/hooks/useToast';
 
 export const UsersIndexPage: React.FC = () => {
   const navigate = useNavigate();
@@ -103,7 +103,7 @@ export const UsersIndexPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Users"
-        breadcrumbs={[{ label: 'Users' }]}
+       
         actions={
           <Stack direction="row" spacing={1.5} alignItems="center">
             <TextField
@@ -182,6 +182,7 @@ export const UsersIndexPage: React.FC = () => {
                   <Tooltip title="Edit">
                     <IconButton
                       size="small"
+                      aria-label="Edit user"
                       onClick={() => navigate(ROUTES.EDIT_USER(u.userId))}
                     >
                       <EditOutlinedIcon fontSize="small" />
@@ -190,6 +191,7 @@ export const UsersIndexPage: React.FC = () => {
                   <Tooltip title="Delete">
                     <IconButton
                       size="small"
+                      aria-label="Delete user"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteClick(u);

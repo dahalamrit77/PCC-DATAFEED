@@ -3,9 +3,9 @@
  * RTK Query endpoints for patient coverage/insurance data
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type { Coverage } from '../../../types/patient.types';
-import type { ApiResponse } from '../../../shared/types';
+import type { ApiResponse } from '@shared/types';
 
 export const coverageApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -20,7 +20,7 @@ export const coverageApi = baseApi.injectEndpoints({
         }
         return null;
       },
-      providesTags: (result, error, patientId) => [
+      providesTags: (_result, _error, patientId) => [
         { type: 'Coverage', id: patientId },
       ],
     }),

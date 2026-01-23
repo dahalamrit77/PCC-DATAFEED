@@ -5,6 +5,8 @@
  * For production, you should verify the token signature on the backend.
  */
 
+import { logger } from './logger';
+
 export interface JWTPayload {
   userId?: string;
   email?: string;
@@ -31,7 +33,7 @@ export function decodeJWT(token: string): JWTPayload | null {
     // JWT format: header.payload.signature
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.error('Invalid JWT format: token does not have 3 parts');
+      logger.error('Invalid JWT format: token does not have 3 parts');
       return null;
     }
 
@@ -50,7 +52,7 @@ export function decodeJWT(token: string): JWTPayload | null {
 
     return JSON.parse(jsonPayload) as JWTPayload;
   } catch (error) {
-    console.error('Error decoding JWT:', error);
+    logger.error('Error decoding JWT', error);
     return null;
   }
 }

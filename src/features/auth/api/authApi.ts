@@ -3,9 +3,8 @@
  * RTK Query endpoints for authentication
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
-import { storage } from '../../../shared/lib/storage';
-import { ROUTES } from '../../../shared/constants/routes';
+import { baseApi } from '@shared/api/baseApi';
+import { storage } from '@shared/lib/storage';
 
 export interface LoginCredentials {
   email: string;

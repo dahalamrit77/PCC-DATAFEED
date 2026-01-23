@@ -20,16 +20,16 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useUpdateUserMutation, type UpdateUserFacilitiesPatch } from '../api/usersApi';
-import { useGetFacilitiesQuery } from '../../../entities/facility/api/facilityApi';
-import { useToast } from '../../../shared/hooks/useToast';
+import { useGetFacilitiesQuery } from '@entities/facility/api/facilityApi';
+import { useToast } from '@shared/hooks/useToast';
 import {
   ROLE_NAME_TO_ID,
   UserRole,
   type User,
-} from '../../../shared/types/user.types';
-import { useAppSelector } from '../../../app/store/hooks';
-import { getRoleDisplayName } from '../../../shared/lib/permissions';
-import { ROUTES } from '../../../shared/constants/routes';
+} from '@shared/types/user.types';
+import { useAppSelector } from '@app/store/hooks';
+import { getRoleDisplayName } from '@shared/lib/permissions';
+import { ROUTES } from '@shared/constants/routes';
 
 interface EditUserFormProps {
   user: User;
@@ -315,9 +315,12 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user }) => {
               <FormControl fullWidth required error={Boolean(errors.role)}>
                 <Select
                   value={formValues.role}
-                  onChange={(e) =>
-                    handleChange('role')({ target: { value: e.target.value } })
-                  }
+                  onChange={(e) => {
+                    const syntheticEvent = {
+                      target: { value: e.target.value, name: 'role' },
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    handleChange('role')(syntheticEvent);
+                  }}
                   displayEmpty
                   size="small"
                   disabled={availableRoles.length <= 1}
@@ -418,6 +421,7 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user }) => {
             >
               <Button
                 variant="outlined"
+                size="medium"
                 disabled={isSubmitting}
                 onClick={() => navigate(ROUTES.USERS)}
               >
@@ -426,9 +430,8 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user }) => {
               <Button
                 type="submit"
                 variant="contained"
-                size="large"
+                size="medium"
                 disabled={isSubmitting}
-                sx={{ minWidth: 180 }}
               >
                 {isSubmitting ? (
                   <>

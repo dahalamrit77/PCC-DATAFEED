@@ -18,8 +18,8 @@ import {
   ArrowDropDown as ArrowDropDownIcon,
 } from '@mui/icons-material';
 import { Chip } from '@mui/material';
-import { useAppSelector } from '../../../app/store/hooks';
-import { usePermissions } from '../../../shared/hooks/usePermissions';
+import { useAppSelector } from '@app/store/hooks';
+import { usePermissions } from '@shared/hooks/usePermissions';
 
 interface UserMenuProps {
   onLogout: () => void;
@@ -123,7 +123,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
           sx: {
             mt: 1,
             minWidth: 200,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: 4,
           },
         }}
       >

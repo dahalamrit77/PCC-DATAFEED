@@ -7,7 +7,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Box, Button, Typography, Paper } from '@mui/material';
 import { ErrorOutline } from '@mui/icons-material';
-import { logger } from '../../shared/lib/logger';
+import { logger } from '@shared/lib/logger';
 
 interface Props {
   children: ReactNode;

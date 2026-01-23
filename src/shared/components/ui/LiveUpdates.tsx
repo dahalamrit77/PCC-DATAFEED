@@ -22,28 +22,30 @@ import {
   FiberManualRecord as FiberManualRecordIcon,
   Notifications as NotificationsIcon,
 } from '@mui/icons-material';
-import { formatDistanceToNow } from 'date-fns';
-import { useGetEventsQuery } from '../../../features/patients/api/eventsApi';
+import { formatEventTime } from '@shared/lib/date';
+import { useGetEventsQuery } from '@features/patients/api/eventsApi';
 import type { PatientEvent, Patient } from '../../../types/patient.types';
-import { ROUTES } from '../../../shared/constants/routes';
+import { ROUTES } from '@shared/constants/routes';
 import { useNavigate } from 'react-router-dom';
 
-const IMPORTANT_EVENT_TYPES = ['RoomChange', 'InsuranceUpdate', 'Death'] as const;
+// Include more event types to ensure events are visible
+const IMPORTANT_EVENT_TYPES = [
+  'RoomChange', 
+  'InsuranceUpdate', 
+  'Death',
+  'RoomReserve', // Added based on API response
+  'Admission',
+  'Discharge',
+  'Transfer',
+  'HOAStatus',
+  'HospitalTransfer',
+] as const;
 
 interface LiveUpdateItemProps {
   event: PatientEvent;
   onClick?: () => void;
 }
 
-const formatEventTime = (timestamp: string): string => {
-  try {
-    const date = new Date(timestamp);
-    const distance = formatDistanceToNow(date, { addSuffix: true });
-    return distance.replace('about ', '');
-  } catch {
-    return 'Unknown';
-  }
-};
 
 const formatEventMessage = (event: PatientEvent): React.ReactNode => {
   const patientName = (
@@ -145,33 +147,36 @@ interface LiveUpdatesProps {
   patients: Patient[];
 }
 
-export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients }) => {
+export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients: _patients }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
 
   const { data: allEvents = [], isLoading } = useGetEventsQuery();
 
   // Create a Set of patient IDs for fast lookup
-  const patientIdsSet = useMemo(() => {
-    return new Set(patients.map((p) => p.patientId));
-  }, [patients]);
 
   const importantEvents = useMemo(() => {
+    // Show all important event types regardless of patient matching
+    // This ensures events are always visible even if patient data doesn't match
     return allEvents
       .filter((event) => {
+        // Skip events with invalid patientId
+        if (!event.patientId || event.patientId === 0) {
+          return false;
+        }
         // Only include important event types
         if (!IMPORTANT_EVENT_TYPES.includes(event.eventType as any)) {
           return false;
         }
-        // Only include events for patients that exist in our patients list
-        return patientIdsSet.has(event.patientId);
+        // Show all matching event types - no patient matching required
+        return true;
       })
       .slice(0, 10)
       .sort(
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
-  }, [allEvents, patientIdsSet]);
+  }, [allEvents]);
 
   const handleEventClick = (event: PatientEvent) => {
     navigate(ROUTES.PATIENT_DETAIL(event.patientId));
@@ -270,6 +275,7 @@ export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients }) => {
           </Stack>
           <IconButton
             size="small"
+            aria-label="Close live updates"
             onClick={handleClose}
             sx={{
               color: 'primary.contrastText',

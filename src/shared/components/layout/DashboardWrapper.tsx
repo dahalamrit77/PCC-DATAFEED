@@ -5,23 +5,14 @@
 
 import React from 'react';
 import { DashboardLayout } from './DashboardLayout';
-import { DashboardProvider, useDashboard } from '../../../contexts/DashboardContext';
+import { DashboardProvider } from '@contexts/DashboardContext';
 
 interface DashboardWrapperInnerProps {
   children: React.ReactNode;
 }
 
 const DashboardWrapperInner: React.FC<DashboardWrapperInnerProps> = ({ children }) => {
-  const { searchTerm, setSearchTerm } = useDashboard();
-
-  return (
-    <DashboardLayout 
-      searchTerm={searchTerm} 
-      onSearchChange={setSearchTerm}
-    >
-      {children}
-    </DashboardLayout>
-  );
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 interface DashboardWrapperProps {

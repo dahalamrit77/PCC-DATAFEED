@@ -4,9 +4,9 @@
  */
 
 import { combineReducers } from '@reduxjs/toolkit';
-import { baseApi } from '../../shared/api/baseApi';
-import facilityReducer from '../../entities/facility/store/facilitySlice';
-import authReducer from '../../features/auth/store/authSlice';
+import { baseApi } from '@shared/api/baseApi';
+import facilityReducer from '@entities/facility/store/facilitySlice';
+import authReducer from '@features/auth/store/authSlice';
 
 export const rootReducer = combineReducers({
   // RTK Query API

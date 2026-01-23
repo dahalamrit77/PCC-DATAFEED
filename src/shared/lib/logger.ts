@@ -40,7 +40,7 @@ class Logger {
       }
     } else {
       // In production, send to error tracking service
-      // TODO: Integrate with Sentry or similar service
+      // Future: integrate with Sentry or similar error-tracking service
       if (level === 'error') {
         // Example: Sentry.captureException(new Error(message), { extra: context });
       }

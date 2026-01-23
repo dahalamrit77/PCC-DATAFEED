@@ -489,6 +489,23 @@ Create ESLint rule or manual standard:
 
 ---
 
+### Phase 2 Completion Summary ✓
+
+**Completed:**
+
+- **2.1 Service-to-RTK Query:** All `src/services/` removed. `enrichPatientData` lives in `shared/lib/patient.adapter.ts`. Data fetching via RTK Query only.
+- **2.2 RTK Query:** APIs use `baseApi`, typed request/response, consistent tags (`Patient`, `Coverage`, `Event`, `Adt`, `Facility`, `User`), and `transformResponse`. Unused `providesTags` args prefixed with `_`.
+- **2.3 State:** `DashboardContext` kept for `searchTerm` (UI only). Facility and auth state in Redux/RTK Query.
+- **2.4 TypeScript:** `any` removed in events/patients APIs (typed `Record<string, unknown>`). Unused imports/vars removed. `tsc --noEmit` passes.
+- **2.5 React:** Unused imports and variables removed. Select `onChange` in user forms normalized for typing.
+- **2.6 Imports:** `@app`, `@features`, `@shared`, `@entities`, `@components`, `@contexts` used. `patient.types` use relative paths to avoid `@types`/Declaration File conflict.
+- **2.7 Error handling:** `logger` used instead of `console` in auth, jwt, env. Toasts for user-facing errors.
+- **2.8 Utilities:** `formatEventTime` centralized in `shared/lib/date.ts`. `formatEventTime` used by `DashboardPage` and `LiveUpdates`. Storage and permissions already centralized.
+
+**Path aliases (vite + tsconfig):** `@app`, `@features`, `@shared`, `@entities`, `@types`, `@components`, `@contexts`, `@theme`.
+
+---
+
 ## PHASE 3: Production Readiness & Polish
 **Goal**: Ensure design consistency, security hardening, performance optimization, and final code quality audit.
 
@@ -683,6 +700,21 @@ Audit each page route:
 **3.6.3 Browser Compatibility**
 - Test in Chrome, Firefox, Safari, Edge
 - Verify no browser-specific issues
+
+---
+
+### Phase 3 Completion Summary ✓ (Testing excluded as requested)
+
+**Completed:**
+
+- **3.1 Design:** Replaced hardcoded colors in `LoginHero` with `common.white` and `alpha(theme.palette.common.white, …)`. Replaced `fontSize: 14` with `'0.875rem'` and `fontSize: 28` with `'1.75rem'`. `UserMenu` and `MetricCardSkeleton` use `boxShadow: 2` / `boxShadow: 4` (theme). Theme tokens in `theme.ts` left as design source.
+- **3.2 Security:** `.env` and `.env.local` added to `.gitignore`. `.env.example` rewritten as UTF-8 with `VITE_API_BASE_URL`, `VITE_APP_NAME`, `VITE_ENVIRONMENT`. Auth via `storage`, `isTokenValid` in `ProtectedRoute`, RBAC and `RoleProtectedRoute` in place. User forms use yup/validation. Error copy kept generic; `aria-label`s avoid leaking emails.
+- **3.3 Performance:** `keepUnusedDataFor: 60` set on `baseApi`. Routes remain lazy-loaded with `LoadingFallback`. Unused `react-error-boundary` removed from `package.json`.
+- **3.4 Accessibility:** `aria-label` on icon-only `IconButton`s (View patient, More actions, Close live updates, Edit user, Delete user). `LoadingFallback` has `role="status"`, `aria-live="polite"`, `aria-label="Loading"`. `DataTableContainer` has `aria-busy` when loading and `role="status"` / `aria-label="Loading table"` on the skeleton box.
+- **3.5 Code quality:** `TODO` in `logger.ts` replaced with “Future: integrate with Sentry…”. `tsc --noEmit` passes. ESLint run (no new errors).
+- **3.6 Build:** `tsc --noEmit` passes. Manual runtime and browser checks (3.6.2, 3.6.3) left to user; no automated testing added.
+
+**Skipped (per request):** Automated testing (unit, e2e, etc.).
 
 ---
 

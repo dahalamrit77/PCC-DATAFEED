@@ -3,14 +3,14 @@
  * RTK Query endpoints for user management
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type {
   CreateUserRequest,
   CreateUserResponse,
   User,
   UserRole,
-} from '../../../shared/types/user.types';
-import { getRoleName } from '../../../shared/types/user.types';
+} from '@shared/types/user.types';
+import { getRoleName } from '@shared/types/user.types';
 
 type RawUser = {
   userId: string;

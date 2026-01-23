@@ -5,8 +5,8 @@
 import React from 'react';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import { PageHeader } from '../../../shared/components/ui';
-import { ROUTES } from '../../../shared/constants/routes';
+import { PageHeader } from '@shared/components/ui';
+import { ROUTES } from '@shared/constants/routes';
 import { EditUserForm } from '../components/EditUserForm';
 import { useGetUsersQuery } from '../api/usersApi';
 

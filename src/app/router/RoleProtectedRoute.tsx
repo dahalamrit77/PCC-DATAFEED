@@ -6,9 +6,9 @@
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
-import { ROUTES } from '../../shared/constants/routes';
-import { UserRole } from '../../shared/types/user.types';
-import { useToast } from '../../shared/hooks/useToast';
+import { ROUTES } from '@shared/constants/routes';
+import { UserRole } from '@shared/types/user.types';
+import { useToast } from '@shared/hooks/useToast';
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;

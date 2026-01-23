@@ -6,8 +6,8 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { CreateUserForm } from '../components/CreateUserForm';
-import { PageHeader } from '../../../shared/components/ui';
-import { ROUTES } from '../../../shared/constants/routes';
+import { PageHeader } from '@shared/components/ui';
+import { ROUTES } from '@shared/constants/routes';
 
 export const CreateUserPage: React.FC = () => {
   return (

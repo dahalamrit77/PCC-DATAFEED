@@ -3,7 +3,7 @@
  * RTK Query endpoints for patient events
  */
 
-import { baseApi } from '../../../shared/api/baseApi';
+import { baseApi } from '@shared/api/baseApi';
 import type { PatientEvent } from '../../../types/patient.types';
 
 export interface GetEventsParams {
@@ -15,10 +15,15 @@ export interface GetEventsParams {
 export const eventsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getEvents: builder.query<PatientEvent[], GetEventsParams | void>({
-      query: (params) => ({
-        url: '/events',
-        params,
-      }),
+      query: (params) => {
+        if (!params) {
+          return { url: '/events' };
+        }
+        return {
+          url: '/events',
+          params: params as Record<string, unknown>,
+        };
+      },
       /**
        * Normalize raw Events API responses into our PatientEvent shape.
        * The backend may return PascalCase keys (EventType, Timestamp, etc.)
@@ -29,31 +34,32 @@ export const eventsApi = baseApi.injectEndpoints({
           return [];
         }
 
-        const normalized = (response as any[]).map((item) => {
+        const normalized = (response as unknown[]).map((item: unknown) => {
+          const rawItem = item as Record<string, unknown>;
           const event: PatientEvent = {
             eventId:
-              item.eventId ??
-              item.EventId ??
-              item.MessageId ??
-              String(item.id ?? ''),
-            eventType: item.eventType ?? item.EventType ?? '',
-            patientId: item.patientId ?? item.PatientId ?? 0,
-            patientName: item.patientName ?? item.PatientName ?? '',
-            timestamp: item.timestamp ?? item.Timestamp ?? item.CreatedAt ?? '',
-            room: item.room ?? item.Room ?? null,
-            previousRoom: item.previousRoom ?? item.PreviousRoom ?? null,
-            origin: item.origin ?? item.Origin ?? null,
-            originType: item.originType ?? item.OriginType ?? null,
-            destination: item.destination ?? item.Destination ?? null,
+              (rawItem.eventId as string | undefined) ??
+              (rawItem.EventId as string | undefined) ??
+              (rawItem.MessageId as string | undefined) ??
+              String((rawItem.id as number | string | undefined) ?? ''),
+            eventType: (rawItem.eventType as string | undefined) ?? (rawItem.EventType as string | undefined) ?? '',
+            patientId: (rawItem.patientId as number | undefined) ?? (rawItem.PatientId as number | undefined) ?? 0,
+            patientName: (rawItem.patientName as string | undefined) ?? (rawItem.PatientName as string | undefined) ?? '',
+            timestamp: (rawItem.timestamp as string | undefined) ?? (rawItem.Timestamp as string | undefined) ?? (rawItem.CreatedAt as string | undefined) ?? '',
+            room: (rawItem.room as string | undefined) ?? (rawItem.Room as string | undefined) ?? null,
+            previousRoom: (rawItem.previousRoom as string | undefined) ?? (rawItem.PreviousRoom as string | undefined) ?? null,
+            origin: (rawItem.origin as string | undefined) ?? (rawItem.Origin as string | undefined) ?? null,
+            originType: (rawItem.originType as string | undefined) ?? (rawItem.OriginType as string | undefined) ?? null,
+            destination: (rawItem.destination as string | undefined) ?? (rawItem.Destination as string | undefined) ?? null,
             destinationType:
-              item.destinationType ?? item.DestinationType ?? null,
-            facility: item.facility ?? item.Facility ?? null,
+              (rawItem.destinationType as string | undefined) ?? (rawItem.DestinationType as string | undefined) ?? null,
+            facility: (rawItem.facility as string | number | undefined) ?? (rawItem.Facility as string | number | undefined) ?? null,
             previousFacility:
-              item.previousFacility ?? item.PreviousFacility ?? null,
+              (rawItem.previousFacility as string | number | undefined) ?? (rawItem.PreviousFacility as string | number | undefined) ?? null,
             previousProvider:
-              item.previousProvider ?? item.PreviousProvider ?? null,
+              (rawItem.previousProvider as string | undefined) ?? (rawItem.PreviousProvider as string | undefined) ?? null,
             currentProvider:
-              item.currentProvider ?? item.CurrentProvider ?? null,
+              (rawItem.currentProvider as string | undefined) ?? (rawItem.CurrentProvider as string | undefined) ?? null,
           };
 
           return event;
@@ -81,31 +87,32 @@ export const eventsApi = baseApi.injectEndpoints({
           return [];
         }
 
-        const normalized = (response as any[]).map((item) => {
+        const normalized = (response as unknown[]).map((item: unknown) => {
+          const rawItem = item as Record<string, unknown>;
           const event: PatientEvent = {
             eventId:
-              item.eventId ??
-              item.EventId ??
-              item.MessageId ??
-              String(item.id ?? ''),
-            eventType: item.eventType ?? item.EventType ?? '',
-            patientId: item.patientId ?? item.PatientId ?? 0,
-            patientName: item.patientName ?? item.PatientName ?? '',
-            timestamp: item.timestamp ?? item.Timestamp ?? item.CreatedAt ?? '',
-            room: item.room ?? item.Room ?? null,
-            previousRoom: item.previousRoom ?? item.PreviousRoom ?? null,
-            origin: item.origin ?? item.Origin ?? null,
-            originType: item.originType ?? item.OriginType ?? null,
-            destination: item.destination ?? item.Destination ?? null,
+              (rawItem.eventId as string | undefined) ??
+              (rawItem.EventId as string | undefined) ??
+              (rawItem.MessageId as string | undefined) ??
+              String((rawItem.id as number | string | undefined) ?? ''),
+            eventType: (rawItem.eventType as string | undefined) ?? (rawItem.EventType as string | undefined) ?? '',
+            patientId: (rawItem.patientId as number | undefined) ?? (rawItem.PatientId as number | undefined) ?? 0,
+            patientName: (rawItem.patientName as string | undefined) ?? (rawItem.PatientName as string | undefined) ?? '',
+            timestamp: (rawItem.timestamp as string | undefined) ?? (rawItem.Timestamp as string | undefined) ?? (rawItem.CreatedAt as string | undefined) ?? '',
+            room: (rawItem.room as string | undefined) ?? (rawItem.Room as string | undefined) ?? null,
+            previousRoom: (rawItem.previousRoom as string | undefined) ?? (rawItem.PreviousRoom as string | undefined) ?? null,
+            origin: (rawItem.origin as string | undefined) ?? (rawItem.Origin as string | undefined) ?? null,
+            originType: (rawItem.originType as string | undefined) ?? (rawItem.OriginType as string | undefined) ?? null,
+            destination: (rawItem.destination as string | undefined) ?? (rawItem.Destination as string | undefined) ?? null,
             destinationType:
-              item.destinationType ?? item.DestinationType ?? null,
-            facility: item.facility ?? item.Facility ?? null,
+              (rawItem.destinationType as string | undefined) ?? (rawItem.DestinationType as string | undefined) ?? null,
+            facility: (rawItem.facility as string | number | undefined) ?? (rawItem.Facility as string | number | undefined) ?? null,
             previousFacility:
-              item.previousFacility ?? item.PreviousFacility ?? null,
+              (rawItem.previousFacility as string | number | undefined) ?? (rawItem.PreviousFacility as string | number | undefined) ?? null,
             previousProvider:
-              item.previousProvider ?? item.PreviousProvider ?? null,
+              (rawItem.previousProvider as string | undefined) ?? (rawItem.PreviousProvider as string | undefined) ?? null,
             currentProvider:
-              item.currentProvider ?? item.CurrentProvider ?? null,
+              (rawItem.currentProvider as string | undefined) ?? (rawItem.CurrentProvider as string | undefined) ?? null,
           };
 
           return event;
@@ -117,7 +124,7 @@ export const eventsApi = baseApi.injectEndpoints({
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
       },
-      providesTags: (result, error, { patientId }) => [
+      providesTags: (_result, _error, { patientId }) => [
         { type: 'Event', id: patientId },
       ],
     }),

@@ -19,14 +19,14 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import MicrosoftIcon from '@mui/icons-material/Microsoft';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../shared/constants/routes';
-import { useToast } from '../../../shared/hooks/useToast';
+import { ROUTES } from '@shared/constants/routes';
+import { useToast } from '@shared/hooks/useToast';
 import { useLoginMutation } from '../api/authApi';
-import { useAppDispatch } from '../../../app/store/hooks';
+import { useAppDispatch } from '@app/store/hooks';
 import { setUser } from '../store/authSlice';
-import { UserRole } from '../../../shared/types/user.types';
-import { storage } from '../../../shared/lib/storage';
-import { decodeJWT, extractRoleFromJWT, extractFacilitiesFromJWT } from '../../../shared/lib/jwt';
+import { UserRole } from '@shared/types/user.types';
+import { decodeJWT, extractRoleFromJWT, extractFacilitiesFromJWT } from '@shared/lib/jwt';
+import { logger } from '@shared/lib/logger';
 
 export interface LoginFormValues {
   email: string;
@@ -153,7 +153,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             } else {
               // If facilities fetch fails (e.g., 401/403), default to User role
               // Don't block login - role will be inferred later when facilities are fetched via RTK Query
-              console.warn('Could not fetch facilities for role inference. Status:', facilitiesResponse.status);
+              logger.warn('Could not fetch facilities for role inference', { status: facilitiesResponse.status });
               if (!extractRoleFromJWT(jwtPayload || {})) {
                 inferredRole = UserRole.USER;
               }
@@ -161,7 +161,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
           } catch (facilitiesError) {
             // If facilities fetch fails or times out, default to User role
             // Don't block login - role will be inferred later when facilities are fetched via RTK Query
-            console.warn('Could not fetch facilities for role inference:', facilitiesError);
+            logger.warn('Could not fetch facilities for role inference', { error: facilitiesError });
             if (!extractRoleFromJWT(jwtPayload || {})) {
               inferredRole = UserRole.USER;
             }
@@ -192,7 +192,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
       navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (err: unknown) {
       // RTK Query error handling
-      console.error('Login error:', err);
+      logger.error('Login error', err);
       
       // Extract error message from RTK Query error structure
       let errorMessage: string | null = null;

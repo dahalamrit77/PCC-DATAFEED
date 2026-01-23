@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Box, Skeleton, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Skeleton, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 
 interface TableSkeletonProps {
   rows?: number;

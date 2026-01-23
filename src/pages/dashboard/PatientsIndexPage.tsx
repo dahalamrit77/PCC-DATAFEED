@@ -24,35 +24,22 @@ import {
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import type { Patient } from '../../types/patient.types';
-import { InsuranceCellOptimized } from '../../components/dashboard/InsuranceCellOptimized';
-import { PageHeader, DataTableContainer } from '../../shared/components/ui';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setActiveFacility } from '../../store/slices/facilitySlice';
-import { useGetFacilitiesQuery } from '../../entities/facility/api/facilityApi';
-import { useGetPatientsQuery } from '../../features/patients/api/patientsApi';
-import { useGetMultiplePatientCoverageQuery } from '../../features/patients/api/coverageApi';
-import { usePermissions } from '../../shared/hooks/usePermissions';
-import { ROUTES } from '../../shared/constants/routes';
+import { InsuranceCellOptimized } from '@components/dashboard/InsuranceCellOptimized';
+import { PageHeader, DataTableContainer } from '@shared/components/ui';
+import { useAppSelector } from '@app/store/hooks';
+import { useGetPatientsQuery } from '@features/patients/api/patientsApi';
+import { useGetMultiplePatientCoverageQuery } from '@features/patients/api/coverageApi';
+import { usePermissions } from '@shared/hooks/usePermissions';
+import { ROUTES } from '@shared/constants/routes';
 
 export const PatientsIndexPage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { canExportData } = usePermissions();
   
-  // Redux: Get auth and facility state (RBAC)
-  const { user } = useAppSelector((state) => state.auth);
-  const { selectedFacilityId, facilityIds } = useAppSelector(
+  // Redux: Get facility state (RBAC)
+  const { selectedFacilityId } = useAppSelector(
     (state) => state.facility
   );
-  
-  // Fetch facilities using RTK Query
-  const { data: facilities = [] } = useGetFacilitiesQuery();
-  
-  // Check if user is admin (has multiple facilities)
-  // Prefer Redux facilityIds / facilities, but also treat test@example.com as admin explicitly
-  const isEmailAdmin = user.email === 'test@example.com';
-  const isFacilityAdmin = facilityIds.length > 1 || facilities.length > 1;
-  const isAdmin = isEmailAdmin || isFacilityAdmin;
   
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -230,6 +217,7 @@ export const PatientsIndexPage: React.FC = () => {
                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                   <IconButton
                     size="small"
+                    aria-label="View patient details"
                     onClick={(e) => { e.stopPropagation(); handleRowClick(patient.patientId); }}
                     sx={{
                       '&:hover': { backgroundColor: 'action.hover' },
@@ -240,6 +228,7 @@ export const PatientsIndexPage: React.FC = () => {
                   </IconButton>
                   <IconButton
                     size="small"
+                    aria-label="More actions"
                     onClick={(e) => e.stopPropagation()}
                     sx={{
                       '&:hover': { backgroundColor: 'action.hover' },
