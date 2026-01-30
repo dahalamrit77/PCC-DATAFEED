@@ -16,6 +16,15 @@ export interface LoginResponse {
   jwtToken: string;
 }
 
+export interface UpdatePasswordRequest {
+  userId: string;
+  newPassword: string;
+}
+
+export interface UpdatePasswordResponse {
+  code: string; // e.g., "SUCCESS_PASSWORD_UPDATED"
+}
+
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginCredentials>({
@@ -35,7 +44,14 @@ export const authApi = baseApi.injectEndpoints({
         }
       },
     }),
+    updatePassword: builder.mutation<UpdatePasswordResponse, UpdatePasswordRequest>({
+      query: (payload) => ({
+        url: '/updatepswd',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useUpdatePasswordMutation } = authApi;

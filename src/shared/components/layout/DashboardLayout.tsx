@@ -26,6 +26,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import BusinessIcon from '@mui/icons-material/Business';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@app/store/hooks';
 import { setFacilityIds, clearSelectedFacility, setActiveFacility } from '@entities/facility/store/facilitySlice';
@@ -226,6 +227,31 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             <ListItemText primary="Patients" primaryTypographyProps={{ fontSize: '0.9375rem', fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === ROUTES.FACILITIES || location.pathname.startsWith('/facilities/')}
+            onClick={() => handleNavClick(ROUTES.FACILITIES)}
+            sx={{
+              color: 'white',
+              py: 1.5,
+              px: 3,
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.24)',
+                },
+              },
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+              <BusinessIcon />
+            </ListItemIcon>
+            <ListItemText primary="Facilities" primaryTypographyProps={{ fontSize: '0.9375rem', fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
         {/* User Management - Only show for Super Admin and Admin */}
         {canCreateUsers && (
           <ListItem disablePadding>
@@ -250,7 +276,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
                 <PersonAddIcon />
               </ListItemIcon>
-              <ListItemText primary="User Management" primaryTypographyProps={{ fontSize: '0.9375rem', fontWeight: 500 }} />
+              <ListItemText primary="Census Management"  primaryTypographyProps={{ fontSize: '0.9375rem', fontWeight: 500 }} />
             </ListItemButton>
           </ListItem>
         )}

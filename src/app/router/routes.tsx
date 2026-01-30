@@ -55,6 +55,24 @@ const EditUserPage = lazy(() =>
   }))
 );
 
+const ChangePasswordPage = lazy(() =>
+  import('../../features/auth/pages/ChangePasswordPage').then((module) => ({
+    default: module.ChangePasswordPage,
+  }))
+);
+
+const FacilitiesIndexPage = lazy(() =>
+  import('../../features/facilities/pages/FacilitiesIndexPage').then((module) => ({
+    default: module.FacilitiesIndexPage,
+  }))
+);
+
+const FacilityDetailsPage = lazy(() =>
+  import('../../features/facilities/pages/FacilityDetailsPage').then((module) => ({
+    default: module.FacilityDetailsPage,
+  }))
+);
+
 // Loading fallback component
 const LoadingFallback = () => (
   <Box
@@ -120,6 +138,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'facilities',
+        element: (
+          <DashboardWrapper>
+            <Suspense fallback={<LoadingFallback />}>
+              <FacilitiesIndexPage />
+            </Suspense>
+          </DashboardWrapper>
+        ),
+      },
+      {
+        path: 'facilities/:facilityId',
+        element: (
+          <DashboardWrapper>
+            <Suspense fallback={<LoadingFallback />}>
+              <FacilityDetailsPage />
+            </Suspense>
+          </DashboardWrapper>
+        ),
+      },
+      {
         path: 'users',
         element: (
           <DashboardWrapper>
@@ -152,6 +190,16 @@ export const router = createBrowserRouter([
                 <EditUserPage />
               </Suspense>
             </RoleProtectedRoute>
+          </DashboardWrapper>
+        ),
+      },
+      {
+        path: 'account/change-password',
+        element: (
+          <DashboardWrapper>
+            <Suspense fallback={<LoadingFallback />}>
+              <ChangePasswordPage />
+            </Suspense>
           </DashboardWrapper>
         ),
       },

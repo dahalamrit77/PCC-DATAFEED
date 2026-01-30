@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -29,11 +29,11 @@ import {
 } from '@mui/icons-material';
 import { formatEventTime } from '@shared/lib/date';
 import type { PatientEvent, Patient } from '../../types/patient.types';
-import { InsuranceCellOptimized } from '@components/dashboard/InsuranceCellOptimized';
+import { InsuranceCellOptimized, EventDetailsDrawer } from '@components/dashboard';
 import { useDashboard } from '@contexts/DashboardContext';
 import { useAppSelector } from '@app/store/hooks';
 import { ROUTES } from '@shared/constants/routes';
-import { useGetPatientsQuery } from '@features/patients/api/patientsApi';
+import { useGetPatientsQuery, useGetPatientsPageQuery } from '@features/patients/api/patientsApi';
 import { useGetEventsQuery } from '@features/patients/api/eventsApi';
 import { useGetMultiplePatientCoverageQuery } from '@features/patients/api/coverageApi';
 import { usePermissions } from '@shared/hooks/usePermissions';
@@ -83,11 +83,42 @@ const getEventTypeLabel = (eventType: string) => {
   }
 };
 
+const SEEN_EVENTS_STORAGE_KEY = 'pcc_dashboard_seen_event_ids';
+const SEEN_EVENTS_MAX = 500;
+
+function getSeenEventIdsFromStorage(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_EVENTS_STORAGE_KEY);
+    const arr = raw ? (JSON.parse(raw) as string[]) : [];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistSeenEventIds(ids: Set<string>) {
+  try {
+    const arr = [...ids];
+    if (arr.length > SEEN_EVENTS_MAX) {
+      arr.splice(0, arr.length - SEEN_EVENTS_MAX);
+    }
+    localStorage.setItem(SEEN_EVENTS_STORAGE_KEY, JSON.stringify(arr));
+  } catch {
+    // ignore
+  }
+}
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { searchTerm } = useDashboard();
   const { canExportData } = usePermissions();
+  const [seenEventIds, setSeenEventIds] = useState<Set<string>>(getSeenEventIdsFromStorage);
+
+  useEffect(() => {
+    const onFocus = () => setSeenEventIds(getSeenEventIdsFromStorage());
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
   
   // Redux: Get auth and facility state (RBAC)
   const { selectedFacilityId } = useAppSelector(
@@ -100,6 +131,13 @@ export const DashboardPage: React.FC = () => {
     isLoading: isLoadingPatients,
     error: patientsError,
   } = useGetPatientsQuery();
+
+  // Total census: use totalCount from api/patients?patientStatus=current (and facilityId when filter applied)
+  const { data: censusPage, isLoading: isLoadingCensus } = useGetPatientsPageQuery({
+    pageNumber: 1,
+    patientStatus: 'current',
+    facilityId: selectedFacilityId ?? undefined,
+  });
 
   // Fetch events via RTK Query
   const {
@@ -116,6 +154,7 @@ export const DashboardPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventTypeFilter, setEventTypeFilter] = useState('all');
   const [dateRangeFilter, setDateRangeFilter] = useState('24h');
+  const [selectedEvent, setSelectedEvent] = useState<PatientEvent | null>(null);
 
   /**
    * Latest event per patient (by timestamp) for fast lookup.
@@ -155,82 +194,67 @@ export const DashboardPage: React.FC = () => {
     return allPatients;
   }, [allPatients, selectedFacilityId]);
 
-  // Optimize coverage fetching - only fetch for patients that will be visible
-  // in the dashboard table. The dashboard is events-driven, so only patients
-  // with at least one event are considered here.
-  const visiblePatientIds = useMemo(() => {
-    const filtered = patients
-      .map((patient) => {
-        const event = latestEventByPatientId.get(patient.patientId) ?? null;
-        return { patient, event };
-      })
-      .filter((row) => {
-        if (!row.event) {
-          return false;
-        }
-
-        if (statusFilter !== 'all') {
-          if (
-            statusFilter === 'active' &&
-            row.patient.patientStatus !== 'Current'
-          ) {
-            return false;
-          }
-          if (
-            statusFilter === 'discharged' &&
-            row.patient.patientStatus !== 'Discharged'
-          ) {
-            return false;
-          }
-        }
-
-        if (eventTypeFilter !== 'all' && row.event.eventType !== eventTypeFilter) {
-          return false;
-        }
-
-        if (searchTerm.trim()) {
-          const searchLower = searchTerm.toLowerCase();
-          const patientName = `${row.patient.lastName}, ${row.patient.firstName}`.toLowerCase();
-          const patientIdStr = row.patient.patientId.toString();
-          if (
-            !patientName.includes(searchLower) &&
-            !patientIdStr.includes(searchLower)
-          ) {
-            return false;
-          }
-        }
-
-        return true;
-      });
-
-    return filtered.map((row) => row.patient.patientId);
-  }, [patients, latestEventByPatientId, statusFilter, eventTypeFilter, searchTerm]);
-
-  // Fetch coverage for visible patients in parallel using RTK Query
-  const {
-    data: coverageMap = {},
-    isLoading: coverageLoading,
-  } = useGetMultiplePatientCoverageQuery(visiblePatientIds, {
-    skip: visiblePatientIds.length === 0,
-  });
-
-  const getCoverage = (patientId: number) => coverageMap[patientId] || null;
+  // Coverage is fetched for patient IDs in tableRows (see coveragePatientIds below).
 
   // Calculate KPI metrics
   const metrics = useMemo(() => {
-    const totalCensus = patients.filter((p) => p.patientStatus !== 'Discharged').length;
-    // Count InsuranceUpdate events from the events API
-    const insuranceChanges = events.filter(
-      (e) => e.eventType === 'InsuranceUpdate'
-    ).length;
+    // Total census: use totalCount from API response (api/patients?patientStatus=current, optional facilityId)
+    const totalCensus =
+      censusPage != null && typeof censusPage.totalCount === 'number'
+        ? censusPage.totalCount
+        : 0;
+    
+    // Count InsuranceUpdate events filtered by selected facility
+    // Create a map of patients by patientId for facility lookup
+    const patientsMap = new Map<number, Patient>();
+    allPatients.forEach((patient) => {
+      patientsMap.set(patient.patientId, patient);
+    });
+    
+    const filterEventsByFacility = (list: typeof events) => {
+      if (selectedFacilityId === null) return list;
+      return list.filter((event) => {
+        const patient = patientsMap.get(event.patientId);
+        if (patient?.facId === selectedFacilityId) return true;
+        if (event.facility != null) {
+          const eventFacilityId =
+            typeof event.facility === 'number'
+              ? event.facility
+              : parseInt(String(event.facility), 10);
+          if (!isNaN(eventFacilityId) && eventFacilityId === selectedFacilityId) return true;
+        }
+        return false;
+      });
+    };
+
+    const insuranceChanges = filterEventsByFacility(events.filter((e) => e.eventType === 'InsuranceUpdate')).length;
+    const roomChanges = filterEventsByFacility(events.filter((e) => e.eventType === 'RoomChange')).length;
+
     return {
       totalCensus,
       insuranceChanges,
+      roomChanges,
     };
-  }, [patients, events]);
+  }, [censusPage, selectedFacilityId, allPatients, events]);
+
+  // Helper: event belongs to selected facility (when facility filter is applied)
+  const eventMatchesFacility = useCallback(
+    (row: TableRowData): boolean => {
+      if (selectedFacilityId === null) return true;
+      if (row.patient.facId === selectedFacilityId) return true;
+      const event = row.event;
+      if (!event?.facility) return false;
+      const eventFacilityId =
+        typeof event.facility === 'number'
+          ? event.facility
+          : parseInt(String(event.facility), 10);
+      return !isNaN(eventFacilityId) && eventFacilityId === selectedFacilityId;
+    },
+    [selectedFacilityId]
+  );
 
   // Create table rows using events as primary source, enriched with patient data.
-  // This ensures events are shown even if patient matching fails.
+  // When facility filter is applied, only show events from that facility.
   const tableRows = useMemo((): TableRowData[] => {
     // Create a map of patients by patientId for fast lookup
     const patientsMap = new Map<number, Patient>();
@@ -242,8 +266,7 @@ export const DashboardPage: React.FC = () => {
     const rows: TableRowData[] = [];
     latestEventByPatientId.forEach((event, patientId) => {
       const patient = patientsMap.get(patientId);
-      // Include event even if patient not found (will show with limited patient data)
-      rows.push({ 
+      const row: TableRowData = {
         patient: patient || {
           patientId,
           firstName: event.patientName?.split(', ')[1] || event.patientName || 'Unknown',
@@ -252,8 +275,10 @@ export const DashboardPage: React.FC = () => {
           gender: '',
           patientStatus: 'Current' as const,
         },
-        event 
-      });
+        event,
+      };
+      if (!eventMatchesFacility(row)) return;
+      rows.push(row);
     });
 
     return rows.filter((row) => {
@@ -333,11 +358,25 @@ export const DashboardPage: React.FC = () => {
   }, [
     patients,
     latestEventByPatientId,
+    eventMatchesFacility,
     statusFilter,
     eventTypeFilter,
     searchTerm,
     dateRangeFilter,
   ]);
+
+  // Fetch coverage for exactly the patients in the displayed table rows
+  const coveragePatientIds = useMemo(
+    () => [...new Set(tableRows.map((r) => r.patient.patientId))],
+    [tableRows]
+  );
+  const {
+    data: coverageMap = {},
+    isLoading: coverageLoading,
+  } = useGetMultiplePatientCoverageQuery(coveragePatientIds, {
+    skip: coveragePatientIds.length === 0,
+  });
+  const getCoverage = (patientId: number) => coverageMap[patientId] || null;
 
   const getStatusBadge = (patient: Patient | null, event: PatientEvent | null) => {
     if (!patient) {
@@ -423,19 +462,61 @@ export const DashboardPage: React.FC = () => {
     );
   };
 
-  const handleRowClick = (patientId: number) => {
-    navigate(ROUTES.PATIENT_DETAIL(patientId));
-  };
+  const handleRowClick = useCallback(
+    (event: PatientEvent) => {
+      const eventId = event.eventId;
+      const next = new Set(seenEventIds);
+      next.add(eventId);
+      setSeenEventIds(next);
+      persistSeenEventIds(next);
+      setSelectedEvent(event);
+    },
+    [seenEventIds]
+  );
+
+  const handleCloseDrawer = useCallback(() => setSelectedEvent(null), []);
+
+  const handleViewPatientFromDrawer = useCallback(
+    (patientId: number) => {
+      setSelectedEvent(null);
+      navigate(ROUTES.PATIENT_DETAIL(patientId));
+    },
+    [navigate]
+  );
+
+  const handlePatientNameClick = useCallback(
+    (e: React.MouseEvent, patientId: number) => {
+      e.stopPropagation();
+      navigate(ROUTES.PATIENT_DETAIL(patientId));
+    },
+    [navigate]
+  );
+
+  const isEventNew = useCallback(
+    (eventId: string) => !seenEventIds.has(eventId),
+    [seenEventIds]
+  );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* KPI Cards */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+      {/* KPI Cards - separated with consistent gaps */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={3}
+        sx={{ '& > *': { flex: 1, minWidth: 0 } }}
+      >
         <MetricCard
           title="TOTAL CENSUS"
           value={metrics.totalCensus}
           icon={<PeopleIcon />}
           iconColor="#7b2cbf"
+          loading={isLoading || isLoadingCensus}
+        />
+        <MetricCard
+          title="ROOM CHANGES"
+          value={metrics.roomChanges}
+          icon={<HomeIcon />}
+          iconColor="#2e7d32"
           loading={isLoading}
         />
         <MetricCard
@@ -475,10 +556,9 @@ export const DashboardPage: React.FC = () => {
               <MenuItem value="all">All Events</MenuItem>
               <MenuItem value="RoomChange">Room Change</MenuItem>
               <MenuItem value="InsuranceUpdate">Insurance Update</MenuItem>
-              <MenuItem value="HospitalTransfer">Hospital Transfer</MenuItem>
-              <MenuItem value="HOAStatus">HOA Status</MenuItem>
-              <MenuItem value="Discharge">Discharge</MenuItem>
               <MenuItem value="Death">Death</MenuItem>
+              <MenuItem value="Admission">Admission</MenuItem>
+              <MenuItem value="RoomReserve">Room Reserve</MenuItem>
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 150 }}>
@@ -511,18 +591,50 @@ export const DashboardPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tableRows.map((row) => (
+            {tableRows.map((row) => {
+              const isNew = row.event ? isEventNew(row.event.eventId) : false;
+              return (
               <TableRow
-                key={row.patient.patientId}
+                key={row.event?.eventId ?? row.patient.patientId}
                 hover
-                onClick={() => handleRowClick(row.patient.patientId)}
+                onClick={() => row.event && handleRowClick(row.event)}
                 sx={{
                   cursor: 'pointer',
                   '&:active': { backgroundColor: 'action.selected' },
+                  ...(isNew && {
+                    borderLeft: '4px solid',
+                    borderLeftColor: 'primary.main',
+                    animation: 'dashboardNewRow 2s ease-in-out infinite',
+                    '@keyframes dashboardNewRow': {
+                      '0%, 100%': {
+                        backgroundColor: 'rgba(0, 158, 220, 0.1)',
+                        borderLeftColor: '#009EDC',
+                      },
+                      '50%': {
+                        backgroundColor: 'rgba(0, 158, 220, 0.22)',
+                        borderLeftColor: '#0078A8',
+                      },
+                    },
+                  }),
                 }}
               >
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  <Typography
+                    component="button"
+                    variant="body2"
+                    onClick={(e) => handlePatientNameClick(e, row.patient.patientId)}
+                    sx={{
+                      fontWeight: 500,
+                      color: 'primary.main',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      border: 'none',
+                      background: 'none',
+                      padding: 0,
+                      font: 'inherit',
+                      '&:hover': { color: 'primary.dark' },
+                    }}
+                  >
                     {row.patient.lastName}, {row.patient.firstName}
                   </Typography>
                 </TableCell>
@@ -568,8 +680,8 @@ export const DashboardPage: React.FC = () => {
                   <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                     <IconButton
                       size="small"
-                      aria-label="View patient details"
-                      onClick={(e) => { e.stopPropagation(); handleRowClick(row.patient.patientId); }}
+                      aria-label="View event details"
+                      onClick={(e) => { e.stopPropagation(); row.event && handleRowClick(row.event); }}
                       sx={{
                         '&:hover': { backgroundColor: 'action.hover' },
                         color: 'text.secondary',
@@ -591,10 +703,19 @@ export const DashboardPage: React.FC = () => {
                   </Stack>
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
           </TableBody>
         </DataTableContainer>
       </SectionCard>
+
+      {/* Event details drawer */}
+      <EventDetailsDrawer
+        event={selectedEvent}
+        open={!!selectedEvent}
+        onClose={handleCloseDrawer}
+        onViewPatient={handleViewPatientFromDrawer}
+      />
 
       {/* Live Updates Panel */}
       <LiveUpdates patients={allPatients} />

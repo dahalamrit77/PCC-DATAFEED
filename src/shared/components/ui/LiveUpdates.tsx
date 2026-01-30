@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { formatEventTime } from '@shared/lib/date';
 import { useGetEventsQuery } from '@features/patients/api/eventsApi';
+import { useGetFacilitiesQuery } from '@entities/facility/api/facilityApi';
 import type { PatientEvent, Patient } from '../../../types/patient.types';
 import { ROUTES } from '@shared/constants/routes';
 import { useNavigate } from 'react-router-dom';
@@ -43,9 +44,35 @@ const IMPORTANT_EVENT_TYPES = [
 
 interface LiveUpdateItemProps {
   event: PatientEvent;
+  facilityName?: string | null;
   onClick?: () => void;
 }
 
+const getEventTypeLabel = (eventType: string): string => {
+  switch (eventType) {
+    case 'RoomChange':
+      return 'Room Change';
+    case 'InsuranceUpdate':
+      return 'Insurance Update';
+    case 'Death':
+      return 'Death';
+    case 'Admission':
+      return 'Admission';
+    case 'RoomReserve':
+      return 'Room Reserve';
+    case 'Discharge':
+      return 'Discharge';
+    case 'Transfer':
+      return 'Transfer';
+    case 'HOAStatus':
+      return 'HOA Status';
+    case 'HospitalTransfer':
+      return 'Hospital Transfer';
+    default:
+      // Convert camelCase/PascalCase to readable format
+      return eventType.replace(/([a-z])([A-Z])/g, '$1 $2');
+  }
+};
 
 const formatEventMessage = (event: PatientEvent): React.ReactNode => {
   const patientName = (
@@ -63,6 +90,8 @@ const formatEventMessage = (event: PatientEvent): React.ReactNode => {
       {event.patientName}
     </Typography>
   );
+
+  const eventTypeLabel = getEventTypeLabel(event.eventType);
 
   switch (event.eventType) {
     case 'RoomChange': {
@@ -97,13 +126,13 @@ const formatEventMessage = (event: PatientEvent): React.ReactNode => {
     default:
       return (
         <>
-          Event: {patientName} - {event.eventType}
+          {eventTypeLabel}: {patientName}
         </>
       );
   }
 };
 
-const LiveUpdateItem: React.FC<LiveUpdateItemProps> = ({ event, onClick }) => {
+const LiveUpdateItem: React.FC<LiveUpdateItemProps> = ({ event, facilityName, onClick }) => {
   return (
     <Box
       onClick={onClick}
@@ -118,16 +147,34 @@ const LiveUpdateItem: React.FC<LiveUpdateItemProps> = ({ event, onClick }) => {
       }}
     >
       <Stack spacing={1} sx={{ py: 1.5, px: 0 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            fontSize: '0.75rem',
-            fontWeight: 500,
-          }}
-        >
-          {formatEventTime(event.timestamp)}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              fontSize: '0.75rem',
+              fontWeight: 500,
+            }}
+          >
+            {formatEventTime(event.timestamp)}
+          </Typography>
+          {facilityName && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                px: 0.75,
+                py: 0.25,
+                bgcolor: 'action.hover',
+                borderRadius: 0.5,
+              }}
+            >
+              {facilityName}
+            </Typography>
+          )}
+        </Box>
         <Typography
           variant="body2"
           sx={{
@@ -147,11 +194,49 @@ interface LiveUpdatesProps {
   patients: Patient[];
 }
 
-export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients: _patients }) => {
+export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
 
   const { data: allEvents = [], isLoading } = useGetEventsQuery();
+  const { data: facilities = [] } = useGetFacilitiesQuery();
+
+  // Create a map of patients by patientId for facility lookup
+  const patientsMap = useMemo(() => {
+    const map = new Map<number, Patient>();
+    patients.forEach((patient) => {
+      map.set(patient.patientId, patient);
+    });
+    return map;
+  }, [patients]);
+
+  // Create a map of facilities by facId for name lookup
+  const facilitiesMap = useMemo(() => {
+    const map = new Map<number, string>();
+    facilities.forEach((facility) => {
+      map.set(facility.facId, facility.facilityName);
+    });
+    return map;
+  }, [facilities]);
+
+  // Helper function to get facility name for an event
+  const getFacilityNameForEvent = (event: PatientEvent): string | null => {
+    // First try to get facility from patient
+    const patient = patientsMap.get(event.patientId);
+    if (patient?.facId) {
+      return facilitiesMap.get(patient.facId) || null;
+    }
+    
+    // Fallback to event's facility field
+    if (event.facility) {
+      const facilityId = typeof event.facility === 'number' ? event.facility : parseInt(String(event.facility), 10);
+      if (!isNaN(facilityId)) {
+        return facilitiesMap.get(facilityId) || null;
+      }
+    }
+    
+    return null;
+  };
 
   // Create a Set of patient IDs for fast lookup
 
@@ -313,17 +398,21 @@ export const LiveUpdates: React.FC<LiveUpdatesProps> = ({ patients: _patients })
             </Box>
           ) : (
             <Box sx={{ px: 2, py: 1 }}>
-              {importantEvents.map((event, index) => (
-                <React.Fragment key={event.eventId || index}>
-                  <LiveUpdateItem
-                    event={event}
-                    onClick={() => handleEventClick(event)}
-                  />
-                  {index < importantEvents.length - 1 && (
-                    <Divider sx={{ my: 0.5 }} />
-                  )}
-                </React.Fragment>
-              ))}
+              {importantEvents.map((event, index) => {
+                const facilityName = getFacilityNameForEvent(event);
+                return (
+                  <React.Fragment key={event.eventId || index}>
+                    <LiveUpdateItem
+                      event={event}
+                      facilityName={facilityName}
+                      onClick={() => handleEventClick(event)}
+                    />
+                    {index < importantEvents.length - 1 && (
+                      <Divider sx={{ my: 0.5 }} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </Box>
           )}
         </CardContent>

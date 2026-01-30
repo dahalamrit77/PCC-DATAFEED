@@ -6,6 +6,8 @@
 import { baseApi } from '@shared/api/baseApi';
 import type { PatientEvent } from '../../../types/patient.types';
 
+export type { PatientEvent };
+
 export interface GetEventsParams {
   patientId?: number;
   eventType?: string;
@@ -60,6 +62,8 @@ export const eventsApi = baseApi.injectEndpoints({
               (rawItem.previousProvider as string | undefined) ?? (rawItem.PreviousProvider as string | undefined) ?? null,
             currentProvider:
               (rawItem.currentProvider as string | undefined) ?? (rawItem.CurrentProvider as string | undefined) ?? null,
+            details:
+              (rawItem.details as string | undefined) ?? (rawItem.Details as string | undefined) ?? null,
           };
 
           return event;
@@ -113,6 +117,8 @@ export const eventsApi = baseApi.injectEndpoints({
               (rawItem.previousProvider as string | undefined) ?? (rawItem.PreviousProvider as string | undefined) ?? null,
             currentProvider:
               (rawItem.currentProvider as string | undefined) ?? (rawItem.CurrentProvider as string | undefined) ?? null,
+            details:
+              (rawItem.details as string | undefined) ?? (rawItem.Details as string | undefined) ?? null,
           };
 
           return event;

@@ -108,6 +108,9 @@ export interface PatientEvent {
   // Optional payer/provider context for insurance-related events
   previousProvider?: string | null;
   currentProvider?: string | null;
+
+  // Optional free-form details from API (Details)
+  details?: string | null;
 }
 
 // Export as Event for backward compatibility (but prefer PatientEvent)

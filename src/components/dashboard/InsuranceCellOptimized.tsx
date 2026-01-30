@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import type { Coverage } from '../../types/patient.types';
 
 interface InsuranceCellOptimizedProps {
@@ -21,16 +21,44 @@ export const InsuranceCellOptimized: React.FC<InsuranceCellOptimizedProps> = ({
 
   if (!coverage || !coverage.payers || coverage.payers.length === 0) {
     return (
-      <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-        No Insurance
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        —
       </Typography>
     );
   }
 
+  // Find primary and secondary payers
+  const primaryPayer = coverage.payers.find((p) => p.payerRank === 'Primary');
+  const secondaryPayer = coverage.payers.find((p) => p.payerRank === 'Secondary');
+
   return (
-    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-      {coverage.payers[0].payerName}
-    </Typography>
+    <Stack spacing={0.25}>
+      {primaryPayer && (
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            fontWeight: 500,
+            fontSize: '0.875rem',
+            lineHeight: 1.3,
+          }}
+        >
+          {primaryPayer.payerName}
+        </Typography>
+      )}
+      {secondaryPayer && (
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            fontWeight: 400,
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            lineHeight: 1.2,
+          }}
+        >
+          {secondaryPayer.payerName}
+        </Typography>
+      )}
+    </Stack>
   );
 };
 
